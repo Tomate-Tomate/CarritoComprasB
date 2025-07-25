@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resumen de Pedido</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    th {
+      background-color: #e5e5e5;
+    }
+    img {
+      width: 60px;
+      height: auto;
+    }
+    .total {
+      font-weight: bold;
+      text-align: right;
+      margin-top: 15px;
+    }
+    button {
+      padding: 8px 12px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #388E3C;
+    }
+    .danger {
+      background-color: #e53935;
+    }
+    .danger:hover {
+      background-color: #b71c1c;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Resumen de tu pedido</h2>
+
+<table id="pedidoTabla">
+  <thead>
+    <tr>
+      <th>Imagen</th>
+      <th>Producto</th>
+      <th>Tamaño</th>
+      <th>Cantidad</th>
+      <th>Precio</th>
+      <th>Eliminar</th>
+    </tr>
+  </thead>
+  <tbody id="pedidoBody">
+    <!-- Los productos aparecerán aquí -->
+  </tbody>
+</table>
+
+<div class="total" id="totalProductos">Productos: 0</div>
+<div class="total" id="totalPrecio">Total: $0</div>
+
+<h3>Datos del cliente</h3>
+<div>
+  <label>Nombre:</label><br />
+  <input type="text" id="clienteNombre" /><br /><br />
+
+  <label>Dirección:</label><br />
+  <input type="text" id="clienteDireccion" /><br /><br />
+
+  <label>Teléfono:</label><br />
+  <input type="text" id="clienteTelefono" /><br /><br />
+
+  <label>Medio de pago:</label><br />
+  <select id="clientePago">
+    <option value="Efectivo">Efectivo</option>
+    <option value="Nequi">Nequi</option>
+    <option value="Daviplata">Daviplata</option>
+    <option value="Transferencia">Transferencia</option>
+    <option value="Datafono">Datafono</option>
+  </select><br /><br />
+
+  <label>Observaciones:</label><br />
+  <textarea id="clienteObservaciones" rows="3"></textarea><br /><br />
+</div>
+
+
+<br>
+<button class="danger" onclick="borrarTodo()">🗑 Borrar Todo</button>
+<button onclick="enviarWhatsApp()">📤 Enviar a WhatsApp</button>
+<!-- Guarda este archivo como resumen.html -->
+<!-- ... tu código original intacto con correcciones en JS -->
+
+<script>
+  const precios = {
+    "Personal": 2000,
+    "Dúo": 3800,
+    "Trío": 5600
+  };
+
+  function cargarPedido() {
+    const pedido = JSON.parse(localStorage.getItem("pedido")) || [];
+    const tbody = document.getElementById("pedidoBody");
+    tbody.innerHTML = "";
+
+    let total = 0;
+    let totalCantidad = 0;
+
+    pedido.forEach((item, index) => {
+      const precioTotal = precios[item.tamaño] * item.cantidad;
+      total += precioTotal;
+      totalCantidad += item.cantidad;
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td><img src="${item.imagen}" alt="${item.nombre}" /></td>
+        <td>${item.nombre}</td>
+        <td>
+          <select onchange="actualizarTamaño(${index}, this.value)">
+            <option value="Personal" ${item.tamaño === "Personal" ? "selected" : ""}>Personal</option>
+            <option value="Dúo" ${item.tamaño === "Dúo" ? "selected" : ""}>Dúo</option>
+            <option value="Trío" ${item.tamaño === "Trío" ? "selected" : ""}>Trío</option>
+          </select>
+        </td>
+        <td>
+          <input type="number" value="${item.cantidad}" min="1" onchange="actualizarCantidad(${index}, this.value)" />
+        </td>
+        <td>$${precioTotal}</td>
+        <td><button class="danger" onclick="eliminarProducto(${index})">X</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("totalProductos").textContent = `Productos: ${totalCantidad}`;
+    document.getElementById("totalPrecio").textContent = `Total: $${total}`;
+  }
+
+  function actualizarCantidad(index, nuevaCantidad) {
+    const pedido = JSON.parse(localStorage.getItem("pedido")) || [];
+    pedido[index].cantidad = parseInt(nuevaCantidad);
+    localStorage.setItem("pedido", JSON.stringify(pedido));
+    cargarPedido();
+  }
+
+  function actualizarTamaño(index, nuevoTamaño) {
+    const pedido = JSON.parse(localStorage.getItem("pedido")) || [];
+    pedido[index].tamaño = nuevoTamaño;
+    localStorage.setItem("pedido", JSON.stringify(pedido));
+    cargarPedido();
+  }
+
+  function eliminarProducto(index) {
+    const pedido = JSON.parse(localStorage.getItem("pedido")) || [];
+    pedido.splice(index, 1);
+    localStorage.setItem("pedido", JSON.stringify(pedido));
+    cargarPedido();
+  }
+
+  function borrarTodo() {
+    if (confirm("¿Estás seguro de que deseas borrar todo el pedido?")) {
+      localStorage.removeItem("pedido");
+      cargarPedido();
+    }
+  }
+
+function enviarWhatsApp() {
+  const pedido = JSON.parse(localStorage.getItem("pedido")) || [];
+  if (pedido.length === 0) {
+    alert("El carrito está vacío");
+    return;
+  }
+
+  // Capturar datos del cliente
+  const nombre = document.getElementById("clienteNombre").value.trim();
+  const direccion = document.getElementById("clienteDireccion").value.trim();
+  const telefono = document.getElementById("clienteTelefono").value.trim();
+  const pago = document.getElementById("clientePago").value;
+  const observaciones = document.getElementById("clienteObservaciones").value.trim();
+
+  if (!nombre || !direccion || !telefono) {
+    alert("Por favor, completa los campos obligatorios: nombre, dirección y teléfono.");
+    return;
+  }
+
+  // Armar mensaje
+  let mensaje = `Hola, por favor, me gustaría hacer un pedido de:\n\n`;
+  let total = 0;
+
+  pedido.forEach(item => {
+    const precioItem = precios[item.tamaño] * item.cantidad;
+    mensaje += `🥗 ${item.nombre} - ${item.tamaño} x${item.cantidad} = $${precioItem}\n`;
+    total += precioItem;
+  });
+
+  mensaje += `\n💰 Total: $${total}\n\n`;
+  mensaje += `📄 *Datos del cliente:*\n`;
+  mensaje += `👤 Nombre: ${nombre}\n`;
+  mensaje += `🏠 Dirección: ${direccion}\n`;
+  mensaje += `📞 Teléfono: ${telefono}\n`;
+  mensaje += `💳 Medio de pago: ${pago}\n`;
+  if (observaciones) {
+    mensaje += `📝 Observaciones: ${observaciones}\n`;
+  }
+
+  const numeroWhatsApp = "573203978306"; // Cambia por tu número real
+  const url = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+  window.open(url, "_blank");
+}
+
+  window.onload = cargarPedido;
+</script>
+
+</body>
+</html>
